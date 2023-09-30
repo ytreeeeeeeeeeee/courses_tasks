@@ -1,0 +1,14 @@
+{
+  "books": [
+    {
+      "id": "cb636017-8fd1-4646-b453-abf253d148f8",
+      "title": "book",
+      "description": "desc",
+      "authors": "author",
+      "favorite": false,
+      "fileCover": "some cover",
+      "fileName": "testBook",
+      "fileBook": "public\\books\\1696087921783-testBook.txt"
+    }
+  ]
+}
