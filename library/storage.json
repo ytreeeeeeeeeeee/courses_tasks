@@ -1,14 +1,1 @@
-{
-  "books": [
-    {
-      "id": "cb636017-8fd1-4646-b453-abf253d148f8",
-      "title": "book",
-      "description": "desc",
-      "authors": "author",
-      "favorite": false,
-      "fileCover": "some cover",
-      "fileName": "testBook",
-      "fileBook": "public\\books\\1696087921783-testBook.txt"
-    }
-  ]
-}
+{"books":[{"id":"7c1a8d48-f183-42cc-b0e1-6440ff9ab2d1","title":"book","description":"description","authors":"authors","favourite":"false","fileCover":"cover","fileName":"test","fileBook":"public\\books\\1696263058964-testBook.txt"}]}
