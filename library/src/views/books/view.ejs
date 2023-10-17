@@ -14,6 +14,9 @@
                 <p class="card-text">Обложка: <%= book.fileCover %></p>
                 <p class="card-text">Имя файла: <%= book.fileName %></p>
                 <p class="card-text">Путь к файлу: <%= book.fileBook %></p>
+                <% if (count) { %>
+                    <p class="card-text">Просмотры: <%= count %></p>
+                <% } %>
 
                 <div class="text-right">
                     <a class="btn btn-sm btn-primary" href="/books/update/<%= book.id %>">

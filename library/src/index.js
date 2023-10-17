@@ -3,6 +3,8 @@ import userRouter from './routes/api/user.js';
 import bookRouter from './routes/api/books.js';
 import bookViewRouter from './routes/view/books.js';
 import error from './middlewares/error.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 
@@ -10,6 +12,7 @@ app.use(express.json());
 
 app.use(express.urlencoded());
 app.set("view engine", "ejs");
+app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), '/views'));
 
 app.use('/api/user', userRouter);
 app.use('/api/books', bookRouter);

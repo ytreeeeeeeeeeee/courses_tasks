@@ -7,7 +7,7 @@ let storage;
 const bookViewRouter = express.Router();
 
 bookViewRouter.use((req, res, next) => {
-    fs.readFile('./storage.json', (err, data) => {
+    fs.readFile('./src/storage.json', (err, data) => {
         if (err) throw err;
         storage = JSON.parse(data);
         next();
@@ -73,16 +73,23 @@ bookViewRouter.get('/:id', (req, res) => {
         res.redirect('/errors/404');
     }
     else {
-        res.render('books/view', {
-            title: 'Информация о книге',
-            book: books[idx],
+        fetch(`${req.protocol}://counter:3003/counter/${id}/incr`, {
+            method: 'POST',
+        }).then((response) => {
+            response.json().then((r) => {
+                res.render('books/view', {
+                    title: 'Информация о книге',
+                    book: books[idx],
+                    count: r.count,
+                });
+            });
         });
     }
 });
 
 bookViewRouter.post('/create', fileMulter.single('file'), (req, res) => {
     const formData = convertToFormData(req.body, req.file);
-    fetch(`${req.protocol}://${req.headers.host}/api/books/`, {
+    fetch(`${req.protocol}://library:3002/api/books/`, {
         method: 'POST',
         body: formData,
     })
@@ -94,7 +101,7 @@ bookViewRouter.post('/create', fileMulter.single('file'), (req, res) => {
 bookViewRouter.post('/update/:id', fileMulter.single('file'), (req, res) => {
     const {id} = req.params;
     const formData = convertToFormData(req.body, req.file);
-    fetch(`${req.protocol}://${req.headers.host}/api/books/${id}`, {
+    fetch(`${req.protocol}://library:3002/api/books/${id}`, {
         method: 'PUT',
         body: formData,
     })
@@ -105,7 +112,7 @@ bookViewRouter.post('/update/:id', fileMulter.single('file'), (req, res) => {
 
 bookViewRouter.post('/delete/:id', (req, res) => {
     const {id} = req.params;
-    fetch(`${req.protocol}://${req.headers.host}/api/books/${id}`, {
+    fetch(`${req.protocol}://library:3002/api/books/${id}`, {
         method: 'DELETE',
     })
     .then((response) => {

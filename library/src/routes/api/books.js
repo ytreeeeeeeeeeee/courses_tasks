@@ -1,4 +1,4 @@
-import express from "express";
+import express from 'express';
 import {v4 as uuid} from 'uuid';
 import fs from "fs";
 import fileMulter from "../../middlewares/file.js";
@@ -21,7 +21,7 @@ class Book {
     }
 };
 
-fs.readFile('./storage.json', (err, data) => {
+fs.readFile('./src/storage.json', (err, data) => {
     if (err) throw err;
     storage = JSON.parse(data);
 });
@@ -40,7 +40,7 @@ bookRouter.post('/', fileMulter.single('file'), (req, res) => {
     books.push(newBook);
 
 
-    fs.writeFile('./storage.json', JSON.stringify(storage), (err) => {
+    fs.writeFile('./src/storage.json', JSON.stringify(storage), (err) => {
         if (err) throw err;
     });
 
@@ -57,7 +57,16 @@ bookRouter.get('/:id', (req, res) => {
         res.sendStatus(404);
     }
     else {
-        res.json(books[idx]);
+        fetch(`${req.protocol}://counter:3003/counter/${id}/incr`, {
+            method: 'POST',
+        }).then((response) => {
+            response.json().then((r) => {
+                res.json({
+                    ...books[idx],
+                    count: r.count,
+                });
+            });
+        });
     }
 });
 
@@ -73,7 +82,7 @@ bookRouter.put('/:id', fileMulter.single('file'), (req, res) => {
     }
     else {
         if (fileBook) {
-            fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../', books[idx].fileBook), (err) => {
+            fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', books[idx].fileBook), (err) => {
                 if (err) throw err;
             });
 
@@ -90,7 +99,7 @@ bookRouter.put('/:id', fileMulter.single('file'), (req, res) => {
             fileName,
         };
 
-        fs.writeFile('./storage.json', JSON.stringify(storage), (err) => {
+        fs.writeFile('./src/storage.json', JSON.stringify(storage), (err) => {
             if (err) throw err
         });
 
@@ -107,11 +116,11 @@ bookRouter.delete('/:id', (req, res) => {
         res.sendStatus(404);
     }
     else {
-        fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../', books[idx].fileBook), (err) => {
+        fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', books[idx].fileBook), (err) => {
             if (err) throw err;
             books.splice(idx, 1);
             
-            fs.writeFile('./storage.json', JSON.stringify(storage), (err) => {
+            fs.writeFile('./src/storage.json', JSON.stringify(storage), (err) => {
                 if (err) throw err
             });
         });
@@ -129,7 +138,7 @@ bookRouter.get('/:id/download', (req, res) => {
         res.sendStatus(404);
     }
     else {
-        const bookPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../', books[idx].fileBook);
+        const bookPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', books[idx].fileBook);
         res.download(bookPath);
     }
 })
