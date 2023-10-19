@@ -24,6 +24,7 @@ services:
       - my-network
     environment:
       - PORT=3002
+      - COUNTER_URL=counter:3003
     depends_on:
       - counter
 networks:

@@ -57,7 +57,7 @@ bookRouter.get('/:id', (req, res) => {
         res.sendStatus(404);
     }
     else {
-        fetch(`${req.protocol}://counter:3003/counter/${id}/incr`, {
+        fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
             method: 'POST',
         }).then((response) => {
             response.json().then((r) => {
