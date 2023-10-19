@@ -1,18 +1,8 @@
 import express from "express";
-import fs from "fs";
 import fileMulter from "../../middlewares/temporaryFile.js";
-
-let storage;
+import Book from "../../models/book.js";
 
 const bookViewRouter = express.Router();
-
-bookViewRouter.use((req, res, next) => {
-    fs.readFile('./src/storage.json', (err, data) => {
-        if (err) throw err;
-        storage = JSON.parse(data);
-        next();
-    });
-});
 
 function convertToFormData(body, file) {
     const formData = new FormData();
@@ -33,13 +23,18 @@ function convertToFormData(body, file) {
     return formData;
 }
 
-bookViewRouter.get('/', (req, res) => {
-    const {books} = storage;
+bookViewRouter.get('/', async (req, res) => {
+    try {
+        const books = await Book.find().select('-__v');
 
-    res.render('books/index', {
-        title: 'Список книг',
-        books: books
-    });
+        res.render('books/index', {
+            title: 'Список книг',
+            books: books
+        });
+    } catch (e) {
+        console.log(e);
+        res.redirect('/errors/404');
+    }
 });
 
 bookViewRouter.get('/create', (req, res) => {
@@ -48,42 +43,49 @@ bookViewRouter.get('/create', (req, res) => {
     });
 });
 
-bookViewRouter.get('/update/:id', (req, res) => {
-    const {books} = storage;
+bookViewRouter.get('/update/:id', async (req, res) => {
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-
-    if (idx === -1) {
+    try {
+        const book = await Book.findById(id).select('-__v');
+        if (!book) {
+            res.redirect('/errors/404');
+        }
+        else {
+            res.render('books/update', {
+                title: 'Редактировать книгу',
+                book: book
+            });
+        }
+    } catch (e) {
+        console.log(e);
         res.redirect('/errors/404');
-    }
-    else {
-        res.render('books/update', {
-            title: 'Редактировать книгу',
-            book: books[idx]
-        });
-    }
+    }   
 });
 
-bookViewRouter.get('/:id', (req, res) => {
-    const {books} = storage;
+bookViewRouter.get('/:id', async (req, res) => {
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-
-    if (idx === -1) {
-        res.redirect('/errors/404');
-    }
-    else {
-        fetch(`${req.protocol}://counter:3003/counter/${id}/incr`, {
-            method: 'POST',
-        }).then((response) => {
-            response.json().then((r) => {
-                res.render('books/view', {
-                    title: 'Информация о книге',
-                    book: books[idx],
-                    count: r.count,
+    
+    try {
+        const book = await Book.findById(id).select('-__v');
+        if (!book) {
+            res.redirect('/errors/404');
+        }
+        else {
+            fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
+                method: 'POST',
+            }).then((response) => {
+                response.json().then((r) => {
+                    res.render('books/view', {
+                        title: 'Информация о книге',
+                        book: book,
+                        count: r.count,
+                    });
                 });
             });
-        });
+        }
+    } catch (e) {
+        console.log(e);
+        res.redirect('/errors/404');
     }
 });
 

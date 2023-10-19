@@ -1,145 +1,128 @@
 import express from 'express';
-import {v4 as uuid} from 'uuid';
 import fs from "fs";
-import fileMulter from "../../middlewares/file.js";
+import fileMulter from '../../middlewares/file.js';
 import path from "path";
 import { fileURLToPath } from "url";
+import Book from '../../models/book.js';
 
-let storage = {};
 const bookRouter = express.Router();
 
-class Book {
-    constructor(title = '', description = '', authors = '', favourite = false, fileCover = '', fileName = '', fileBook = '') {
-        this.id = uuid();
-        this.title= title;
-        this.description = description;
-        this.authors = authors;
-        this.favourite = favourite;
-        this.fileCover = fileCover;
-        this.fileName = fileName;
-        this.fileBook = fileBook;
+bookRouter.get('/', async (req, res) => {
+    try {
+        const books = await Book.find().select('-__v');
+        res.json(books);
+    } catch (e) {
+        res.status(500).json({errmsg: e});
     }
-};
-
-fs.readFile('./src/storage.json', (err, data) => {
-    if (err) throw err;
-    storage = JSON.parse(data);
 });
 
-bookRouter.get('/', (req, res) => {
-    const {books} = storage;
-    res.json(books);
-});
-
-bookRouter.post('/', fileMulter.single('file'), (req, res) => {
-    const {books} = storage;
+bookRouter.post('/', fileMulter.single('file'), async (req, res) => {
     const {title, description, authors, favourite, fileCover, fileName} = req.body;
     const {path} = req.file;
 
-    const newBook = new Book(title, description, authors, favourite, fileCover, fileName, path);
-    books.push(newBook);
-
-
-    fs.writeFile('./src/storage.json', JSON.stringify(storage), (err) => {
-        if (err) throw err;
-    });
-
-    res.status(201);
-    res.json(newBook);
-});
-
-bookRouter.get('/:id', (req, res) => {
-    const {books} = storage;
-    const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-    
-    if (idx === -1) {
-        res.sendStatus(404);
-    }
-    else {
-        fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
-            method: 'POST',
-        }).then((response) => {
-            response.json().then((r) => {
-                res.json({
-                    ...books[idx],
-                    count: r.count,
-                });
-            });
-        });
-    }
-});
-
-bookRouter.put('/:id', fileMulter.single('file'), (req, res) => {
-    const {books} = storage;
-    const {title, description, authors, favourite, fileCover, fileName} = req.body;
-    const {id} = req.params;
-    const fileBook = req.file && req.file.path;
-    const idx = books.findIndex(el => el.id === id);
-
-    if (idx === -1) {
-        res.sendStatus(404);
-    }
-    else {
-        if (fileBook) {
-            fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', books[idx].fileBook), (err) => {
-                if (err) throw err;
-            });
-
-            books[idx].fileBook = fileBook;
-        }
-
-        books[idx] = {
-            ...books[idx],
+    try {   
+        const newBook = new Book({
             title,
             description,
             authors,
             favourite,
             fileCover,
             fileName,
-        };
-
-        fs.writeFile('./src/storage.json', JSON.stringify(storage), (err) => {
-            if (err) throw err
+            fileBook: path,
         });
-
-        res.json(books[idx]);
-    } 
+        await newBook.save();
+        
+        res.status(201).json(newBook);
+    } catch (e) {
+        res.status(500).json({errmsg: e});
+    }
 });
 
-bookRouter.delete('/:id', (req, res) => {
-    const {books} = storage;
+bookRouter.get('/:id', async (req, res) => {
     const {id} = req.params;
-    let idx = books.findIndex(el => el.id === id);
-
-    if (idx === -1) {
-        res.sendStatus(404);
-    }
-    else {
-        fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', books[idx].fileBook), (err) => {
-            if (err) throw err;
-            books.splice(idx, 1);
-            
-            fs.writeFile('./src/storage.json', JSON.stringify(storage), (err) => {
-                if (err) throw err
+    
+    try {
+        const book = await Book.findById(id).select('-__v');
+    
+        if (!book) {
+            res.sendStatus(404);
+        }
+        else {
+            fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
+                method: 'POST',
+            }).then((response) => {
+                response.json().then((r) => {
+                    res.json({
+                        ...book,
+                        count: r.count,
+                    });
+                });
             });
-        });
-
-        res.send('ok');
+        }
+    } catch (e) {
+        res.status(500).json({errmsg: e});
     }
 });
 
-bookRouter.get('/:id/download', (req, res) => {
-    const {books} = storage;
+bookRouter.put('/:id', fileMulter.single('file'), async (req, res) => {
+    const {title, description, authors, favourite, fileCover, fileName} = req.body;
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
+    const fileBook = req.file && req.file.path;
 
-    if (idx === -1) {
-        res.sendStatus(404);
+    try {
+        const book = await Book.findByIdAndUpdate(id, {
+            title,
+            description,
+            authors,
+            favourite,
+            fileCover,
+            fileName,
+            fileBook,
+        });
+        
+        book && res.json(book);
+    } catch (e) {
+        res.status(500).json({errmsg: e});
     }
-    else {
-        const bookPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', books[idx].fileBook);
-        res.download(bookPath);
+});
+
+bookRouter.delete('/:id', async (req, res) => {
+    const {id} = req.params;
+
+    try {
+        const fileBook = await Book.findById(id).select('fileBook');
+        const book = await Book.deleteOne({_id: id});
+
+        if (!book) {
+            res.sendStatus(404);
+        }
+        else {
+            fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', fileBook.fileBook), (err) => {
+                if (err) throw err;
+            });
+
+            res.send('ok');
+        }
+    } catch (e) {
+        res.status(500).json({errmsg: e});
+    }
+});
+
+bookRouter.get('/:id/download', async (req, res) => {
+    const {id} = req.params;
+
+    try {
+        const book = await Book.findById(id).select('-__v');
+
+        if (!book) {
+            res.sendStatus(404);
+        }
+        else {
+            const bookPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../', book.fileBook);
+            res.download(bookPath);
+        }
+    } catch (e) {
+        res.status(500).json({errmsg: e});
     }
 })
 

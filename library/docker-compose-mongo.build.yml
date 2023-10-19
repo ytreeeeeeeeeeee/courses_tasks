@@ -30,10 +30,7 @@ services:
       - mongo
 
   counter:
-    image: node:18.18
-    working_dir: /app
-    volumes:
-      - ../counter/:/app
+    build: ../counter
     ports:
       - 3003:3003
     networks:
@@ -41,15 +38,11 @@ services:
     environment:
       - PORT=3003
       - REDIS_URL=redis://storage
-    command: npm run dev
     depends_on: 
       - storage
 
   library:
-    image: node:18.18
-    working_dir: /app
-    volumes:
-      - ./:/app
+    build: .
     ports:
       - 80:3002
     networks:
@@ -61,7 +54,6 @@ services:
       - DB_PASSWORD=example
       - DB_NAME=books
       - DB_HOST=mongodb://mongo
-    command: npm run dev
     depends_on:
       - mongo
       - counter
