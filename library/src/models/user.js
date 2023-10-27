@@ -24,7 +24,7 @@ const userSchema = new Schema({
 
 userSchema.pre('save', function(next) {
     this.displayName = this.displayName || this.username;
-    this.emails.value = `${this.username}@gmail.com`;
+    this.emails.value = `${this.emails.value || this.username}@gmail.com`;
     next();
 });
 

@@ -1,13 +1,14 @@
 import express from 'express';
 import fs from "fs";
 import fileMulter from '../../middlewares/file.js';
+import isAuth from '../../middlewares/isAuth.js';
 import path from "path";
 import { fileURLToPath } from "url";
 import Book from '../../models/book.js';
 
 const bookRouter = express.Router();
 
-bookRouter.get('/', async (req, res) => {
+bookRouter.get('/', isAuth, async (req, res) => {
     try {
         const books = await Book.find().select('-__v');
         res.json(books);
@@ -38,7 +39,7 @@ bookRouter.post('/', fileMulter.single('file'), async (req, res) => {
     }
 });
 
-bookRouter.get('/:id', async (req, res) => {
+bookRouter.get('/:id', isAuth, async (req, res) => {
     const {id} = req.params;
     
     try {
@@ -108,7 +109,7 @@ bookRouter.delete('/:id', async (req, res) => {
     }
 });
 
-bookRouter.get('/:id/download', async (req, res) => {
+bookRouter.get('/:id/download', isAuth, async (req, res) => {
     const {id} = req.params;
 
     try {

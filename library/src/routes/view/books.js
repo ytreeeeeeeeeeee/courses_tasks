@@ -1,6 +1,10 @@
 import express from "express";
+
 import fileMulter from "../../middlewares/temporaryFile.js";
+import isAuth from "../../middlewares/isAuth.js";
+
 import Book from "../../models/book.js";
+import Message from '../../models/message.js';
 
 const bookViewRouter = express.Router();
 
@@ -23,7 +27,7 @@ function convertToFormData(body, file) {
     return formData;
 }
 
-bookViewRouter.get('/', async (req, res) => {
+bookViewRouter.get('/', isAuth, async (req, res) => {
     try {
         const books = await Book.find().select('-__v');
 
@@ -37,13 +41,13 @@ bookViewRouter.get('/', async (req, res) => {
     }
 });
 
-bookViewRouter.get('/create', (req, res) => {
+bookViewRouter.get('/create', isAuth, (req, res) => {
     res.render('books/create', {
         title: 'Создать книгу',
     });
 });
 
-bookViewRouter.get('/update/:id', async (req, res) => {
+bookViewRouter.get('/update/:id', isAuth, async (req, res) => {
     const {id} = req.params;
     try {
         const book = await Book.findById(id).select('-__v');
@@ -62,7 +66,7 @@ bookViewRouter.get('/update/:id', async (req, res) => {
     }   
 });
 
-bookViewRouter.get('/:id', async (req, res) => {
+bookViewRouter.get('/:id', isAuth, async (req, res) => {
     const {id} = req.params;
     
     try {
@@ -71,6 +75,7 @@ bookViewRouter.get('/:id', async (req, res) => {
             res.redirect('/errors/404');
         }
         else {
+            const msgs = await Message.find({bookId: book.id}).select('-__v').sort({_id: -1});
             fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
                 method: 'POST',
             }).then((response) => {
@@ -79,6 +84,8 @@ bookViewRouter.get('/:id', async (req, res) => {
                         title: 'Информация о книге',
                         book: book,
                         count: r.count,
+                        msgs: msgs,
+                        username: req.user.username,
                     });
                 });
             });
@@ -89,7 +96,7 @@ bookViewRouter.get('/:id', async (req, res) => {
     }
 });
 
-bookViewRouter.post('/create', fileMulter.single('file'), (req, res) => {
+bookViewRouter.post('/create', isAuth, fileMulter.single('file'), (req, res) => {
     const formData = convertToFormData(req.body, req.file);
     fetch(`${req.protocol}://library:3002/api/books/`, {
         method: 'POST',
@@ -97,10 +104,12 @@ bookViewRouter.post('/create', fileMulter.single('file'), (req, res) => {
     })
     .then((response) => {
         res.redirect('/books');
+    }).catch((e) => {
+        console.log(e);
     });
 });
 
-bookViewRouter.post('/update/:id', fileMulter.single('file'), (req, res) => {
+bookViewRouter.post('/update/:id', isAuth, fileMulter.single('file'), (req, res) => {
     const {id} = req.params;
     const formData = convertToFormData(req.body, req.file);
     fetch(`${req.protocol}://library:3002/api/books/${id}`, {
@@ -112,7 +121,7 @@ bookViewRouter.post('/update/:id', fileMulter.single('file'), (req, res) => {
     });
 });
 
-bookViewRouter.post('/delete/:id', (req, res) => {
+bookViewRouter.post('/delete/:id', isAuth, (req, res) => {
     const {id} = req.params;
     fetch(`${req.protocol}://library:3002/api/books/${id}`, {
         method: 'DELETE',

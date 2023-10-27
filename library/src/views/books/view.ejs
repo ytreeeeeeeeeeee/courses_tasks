@@ -31,7 +31,59 @@
 
             </div>
         </div>
+
+        <h1>Комментарии</h1>
+
+        <div class="container">
+            <div class="row mt-3">
+                <div class="d-flex flex-row w-100">
+                    <input type="text"
+                        id="comment-text"
+                        class="form-control"
+                        placeholder="Оставьте комментарий">
+                    <button type="button" id="send-comment" class="btn btn-primary">Отправить</button>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="w-100" id="msgs-container">
+                    <% msgs.forEach((msg) => { %>
+                        <%- include('../components/comment', {msg: msg}) %>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+    const socket = io();
+
+    const msgsContainer = document.getElementById('msgs-container');
+    const sendComment = document.getElementById('send-comment');
+    const commentText = document.getElementById('comment-text');
+
+    sendComment.addEventListener('click', (e) => {
+        if (commentText.value != '') {
+            socket.emit('comment', {
+                username: `<%= username %>`,
+                text: commentText.value,
+                bookId: `<%= book.id %>`,
+            });
+        }
+    });
+
+    socket.on('comment', (msg) => {
+        const r = `<div class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100">
+                        <small>${msg.username}</small>
+                    </div>
+                    <p class="mb-1">${msg.text}</p>
+                </div>`;
+        const commentFragment = document.createRange().createContextualFragment(r);
+        msgsContainer.insertBefore(commentFragment, msgsContainer.firstChild);
+        commentText.value = '';
+    });
+</script>
 
 <%- include('../templates/layout-end') %>
