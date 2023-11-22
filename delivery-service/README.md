@@ -98,6 +98,7 @@
 | shortTitle  | string |
 | description | string |
 | images | files[] |
+
 Ответ в формате JSON:
 ```
 {
