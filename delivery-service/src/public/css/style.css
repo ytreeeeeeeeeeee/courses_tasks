@@ -1,0 +1,25 @@
+.notification {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translate(-50%, -50%);
+    padding: 5px;
+    border-radius: 50%;
+    background-color: coral;
+}
+
+.message {
+    border-radius: 30px;
+    padding: 10px;
+    margin: 5px;
+}
+
+.my-message {
+    align-self: flex-end;
+    background-color: coral;
+}
+
+.not-my-message {
+    align-self: flex-start;
+    background-color: rgb(148, 148, 148);
+}

@@ -1,0 +1,45 @@
+services:
+
+  mongo:
+    image: mongo
+    restart: always
+    volumes:
+      - ./data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_RASSWORD}
+    ports:
+      - 27017:27017
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_RASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGOEXPRESS_LOGIN}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGOEXPRESS_PASSWORD}
+    depends_on:
+      - mongo
+
+  delivery:
+    container_name: delivery
+    image: node:18.18
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - 80:${PORT}
+    environment:
+      - PORT=${PORT}
+      - DB_HOST=mongodb://mongo
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${MONGO_ROOT_USER}
+      - DB_PASS=${MONGO_ROOT_RASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+    command: npm run dev
+    depends_on:
+      - mongo

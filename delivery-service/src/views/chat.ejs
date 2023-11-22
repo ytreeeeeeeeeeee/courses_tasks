@@ -1,0 +1,111 @@
+<%- include('./templates/layout-start', {title: title}) %>
+
+<h1><%= title %></h1>
+
+<div class="w-100 d-flex flex-row pb-4" style="height: calc(100vh - 56px);">
+    <div class="d-flex flex-column" style="flex-basis: 200px;">
+        <% chats.forEach(chat => { %>
+            <div class="position-relative border-bottom align-items-center p-1" id="<%= chat._id %>" data-interlocutor-id="<%= chat.interlocutor._id %>" %>"><%= chat.interlocutor.name %></div>
+        <% }) %>
+    </div>
+    <div class="d-flex flex-column flex-grow-1">
+        <div class="d-flex flex-column flex-grow-1 overflow-auto" style="max-height: calc(100vh - 70px);" id="msgs-container">
+
+        </div>
+        <div class="d-flex flex-row flex-shrink-0">
+            <input type="text" name="message" id="message" class="flex-grow-1">
+            <button type="submit" id="send-msg">Отправить</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+    const chats = <%- JSON.stringify(chats) %>;
+    const userId = `<%= userId %>`;
+
+    const socket = io();
+
+    const msgsContainer = document.getElementById('msgs-container');
+    const msgText = document.getElementById('message');
+    const sendMsg = document.getElementById('send-msg');
+
+    let activeChat = chats[0]._id;
+
+    const createNotification = (chatId) => {
+        const chat = chats.find(chat => chat._id === chatId);
+
+        const chatInList = document.getElementById(chatId);
+
+        const notification = document.createElement('p');
+        notification.classList.add('notification');
+        notification.textContent = ++chat.notification;
+
+        chatInList.appendChild(notification);
+    }
+
+    const addNewMessage = (message) => {
+        const msg = document.createElement('div');
+        
+        msg.classList.add('message');
+        msg.classList.add(message.author === userId ? 'my-message' : 'not-my-message');
+        msg.textContent = message.text;
+
+        msgsContainer.appendChild(msg);
+        msgsContainer.scrollTo = msgsContainer.scrollHeight;
+    }
+
+    socket.emit('getHistory', chats[0].interlocutor._id);
+
+    chats.forEach(chat => {
+        const chatElem = document.getElementById(chat._id);
+
+        chatElem.addEventListener('click', (e) => {
+            e.preventDefault(); 
+
+            if (activeChat !== chat.Id) {
+                activeChat = chat._id;
+
+                chat.notification = 0;
+
+                msgsContainer.innerHTML = '';
+    
+                socket.emit('getHistory', chat.interlocutor._id);
+            }
+        });
+
+        if (chat._id !== activeChat && chat.notification > 0) {
+            createNotification(chat._id);
+        }
+    });
+
+    sendMsg.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        if (msgText.value !== '') {
+            const receiver = document.getElementById(activeChat).dataset.interlocutorId;
+
+            socket.emit('sendMessage', receiver, msgText.value);
+
+            msgText.value = '';
+        }
+    });
+
+    socket.on('chatHistory', (allMessages) => {
+        allMessages.forEach(message => {
+            addNewMessage(message);
+        });
+    });
+
+    socket.on('newMessage', (chatId, message) => {
+        if (chats.some(item => item._id === chatId)) {
+            if (chatId === activeChat) {
+                addNewMessage(message);
+            } else {
+                createNotification(chatId);
+            }
+        }
+    });
+</script>
+
+<%- include('./templates/layout-end') %>

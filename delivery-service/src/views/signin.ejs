@@ -1,0 +1,31 @@
+<%- include('./templates/layout-start', {title: title}) %>
+
+<h1><%= title %></h1>
+
+<div class="row">
+    <div class="col-sm-6">
+        
+        <form method="POST" class="mt-5" action="/api/signin" >
+            <div class="form-group">
+                <label for="usernameTitle">Email</label>
+                <input type="text"
+                       name="email"
+                       class="form-control"
+                       id="usernameTitle">
+            </div>
+            <div class="form-group">
+                <label for="passTitle">Пароль</label>
+                <input type="password"
+                       name="password"
+                       class="form-control"
+                       id="passTitle">
+            </div>
+
+            <div class="form-group text-right ">
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<%- include('./templates/layout-end') %>
