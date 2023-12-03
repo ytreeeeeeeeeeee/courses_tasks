@@ -24,7 +24,8 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "typescript": "^5.3.2"
   },
   "nodemonConfig": {
     "ignore": [
