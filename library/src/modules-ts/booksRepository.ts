@@ -52,7 +52,7 @@ abstract class BooksRepository {
         // }
     }
 
-    async updateBook(id: string) {
+    async updateBook(id: string, options: IBook) {
 
     }
 

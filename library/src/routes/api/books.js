@@ -53,7 +53,7 @@ bookRouter.post('/', fileMulter.single('file'), async (req, res) => {
         fileName,
         fileBook: path,
     });
-    res.json(newBook);
+    res.status(201).json(newBook);
 });
 
 bookRouter.get('/:id', isAuth, async (req, res) => {
@@ -62,27 +62,42 @@ bookRouter.get('/:id', isAuth, async (req, res) => {
     // try {
     //     const book = await Book.findById(id).select('-__v');
     
-    //     if (!book) {
-    //         res.sendStatus(404);
-    //     }
-    //     else {
-    //         fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
-    //             method: 'POST',
-    //         }).then((response) => {
-    //             response.json().then((r) => {
-    //                 res.json({
-    //                     ...book,
-    //                     count: r.count,
-    //                 });
-    //             });
-    //         });
-    //     }
+        // if (!book) {
+        //     res.sendStatus(404);
+        // }
+        // else {
+        //     fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
+        //         method: 'POST',
+        //     }).then((response) => {
+        //         response.json().then((r) => {
+        //             res.json({
+        //                 ...book,
+        //                 count: r.count,
+        //             });
+        //         });
+        //     });
+        // }
     // } catch (e) {
     //     res.status(500).json({errmsg: e});
     // }
 
     const book = await repo.getBook(id);
-    res.json(book);
+
+    if (!book) {
+        res.sendStatus(404);
+    }
+    else {
+        fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
+            method: 'POST',
+        }).then((response) => {
+            response.json().then((r) => {
+                res.json({
+                    ...book,
+                    count: r.count,
+                });
+            });
+        });
+    }
 });
 
 bookRouter.put('/:id', fileMulter.single('file'), async (req, res) => {
@@ -106,8 +121,16 @@ bookRouter.put('/:id', fileMulter.single('file'), async (req, res) => {
     //     res.status(500).json({errmsg: e});
     // }
 
-    const book = await repo.updateBook(id);
-    res.json(book);
+    const book = await repo.updateBook(id, {
+        title,
+        description,
+        authors,
+        favourite,
+        fileCover,
+        fileName,
+        fileBook,
+    });
+    book && res.json(book);
 });
 
 bookRouter.delete('/:id', async (req, res) => {
