@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import { injectable } from 'inversify';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from "url";
@@ -13,6 +15,7 @@ interface IBook {
     fileBook: string | undefined
 }
 
+@injectable()
 abstract class BooksRepository {
     async createBook(book: IBook) {
         // try {   
@@ -25,7 +28,7 @@ abstract class BooksRepository {
         // }
     }
 
-    async getBook(id: number) {
+    async getBook(id: string) {
         // try {
         //     const book = await Book.findById(id).select('-__v');
         
@@ -49,11 +52,11 @@ abstract class BooksRepository {
         // }
     }
 
-    async updateBook(id: number) {
+    async updateBook(id: string) {
 
     }
 
-    async deleteBook(id: number) {
+    async deleteBook(id: string) {
         // try {
         //     const fileBook = await Book.findById(id).select('fileBook');
         //     const book = await Book.deleteOne({_id: id});
