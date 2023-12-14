@@ -1,4 +1,5 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, Document } from "mongoose";
+import { IMessage } from "../interfaces/message";
 
 const msgSchema = new Schema({
     text: {
@@ -17,6 +18,6 @@ const msgSchema = new Schema({
     }
 });
 
-const msgModel = model('Message', msgSchema);
+const msgModel = model<IMessage & Document>('Message', msgSchema);
 
 export default msgModel;

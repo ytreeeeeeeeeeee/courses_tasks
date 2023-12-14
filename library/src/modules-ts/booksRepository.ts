@@ -2,78 +2,68 @@ import 'reflect-metadata';
 import { injectable } from 'inversify';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from "url";
-// import Book from '../models/book.js';
+import { IBook } from '../interfaces/book';
+import Book from '../models/book';
+import { errorHandler } from '../decorators/errorHandler';
 
-interface IBook {
-    title: string,
-    description: string | undefined,
-    authors: string | undefined,
-    favourite: string | undefined,
-    fileCover: string | undefined,
-    fileName: string | undefined,
-    fileBook: string | undefined
+interface CreateBookDto {
+    title: IBook['title'];
+    description?: IBook['description'];
+    authors?: IBook['authors'];
+    favourite?: IBook['favourite'];
+    fileCover?: IBook['fileCover'];
+    fileName?: IBook['fileName'];
+    fileBook?: IBook['fileBook'];
 }
 
 @injectable()
-abstract class BooksRepository {
-    async createBook(book: IBook) {
-        // try {   
-        //     const newBook = new Book(book);
-        //     await newBook.save();
-            
-        //     return newBook;
-        // } catch (e) {
-        //     console.error(e);
-        // }
-    }
+class BooksRepository {
+    @errorHandler
+    async createBook(book: CreateBookDto): Promise<IBook> {  
+        book.favourite = book.favourite ? true : false;
 
-    async getBook(id: string) {
-        // try {
-        //     const book = await Book.findById(id).select('-__v');
+        const newBook = new Book(book);
+        await newBook.save();
         
-        //     if (!book) {
-        //         return null;
-        //     }
-        //     else {
-        //         return book;
-        //     }
-        // } catch (e) {
-        //     console.error(e);
-        // }
+        return newBook;
     }
 
-    async getBooks() {
-        // try {
-        //     const books = await Book.find().select('-__v');
-        //     return books;
-        // } catch (e) {
-        //     console.error(e);
-        // }
-    }
-
-    async updateBook(id: string, options: IBook) {
-
-    }
-
-    async deleteBook(id: string) {
-        // try {
-        //     const fileBook = await Book.findById(id).select('fileBook');
-        //     const book = await Book.deleteOne({_id: id});
+    @errorHandler
+    async getBook(id: string): Promise<IBook | null> {
+        const book = await Book.findById(id).select('-__v');
     
-        //     if (!book) {
-        //         return null;
-        //     }
-        //     else {
-        //         fs.unlink(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../', fileBook.fileBook), (err) => {
-        //             if (err) throw err;
-        //         });
-    
-        //        return 'ok';
-        //     }
-        // } catch (e) {
-        //     console.error(e);
-        // }
+        return book;
+    }
+
+    @errorHandler
+    async getBooks(): Promise<IBook[] | []> {
+        const books = await Book.find().select('-__v');
+        return books;
+    }
+
+    @errorHandler
+    async updateBook(id: string, options: IBook): Promise<IBook | null> {
+        options.favourite = options.favourite ? true : false;
+
+        const book = await Book.findByIdAndUpdate(id, options);
+        return book;
+    }
+
+    @errorHandler
+    async deleteBook(id: string): Promise<string | null> {
+        const curBook: IBook = await Book.findById(id).select('fileBook');
+        const book = await Book.deleteOne({_id: id});
+
+        if (!book) {
+            return 'not ok';
+        }
+        else {
+            fs.unlink(path.join(__dirname, '../../', curBook.fileBook), (err) => {
+                if (err) throw err;
+            });
+
+            return 'ok';
+        }
     }
 }
 

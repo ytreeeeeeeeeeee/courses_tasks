@@ -5,29 +5,35 @@ import session from 'express-session';
 import path from 'path';
 import {createServer} from 'http';
 import {Server} from 'socket.io';
-import { fileURLToPath } from 'url';
-import {Strategy as LocalStartegy} from 'passport-local';
+import {IStrategyOptions, IStrategyOptionsWithRequest, Strategy as LocalStartegy, VerifyFunction, VerifyFunctionWithRequest} from 'passport-local';
 
-import User from './models/user.js';
-import Message from './models/message.js';
+import User from './models/user';
+import Message from './models/message';
 
-import userRouter from './routes/api/user.js';
-import bookRouter from './routes/api/books.js';
-import bookViewRouter from './routes/view/books.js';
-import userViewRouter from './routes/view/user.js';
-import error from './middlewares/error.js';
+import userRouter from './routes/api/user';
+import bookRouter from './routes/api/books';
+import bookViewRouter from './routes/view/books';
+import userViewRouter from './routes/view/user';
+import error from './middlewares/error';
+import { IUser } from './interfaces/user';
 
-const options = {
+declare global {
+    namespace Express {
+        interface User extends IUser {}
+    }
+}
+
+const options: IStrategyOptions = {
     usernameField: 'username',
-    passwordField: 'password',
+    passwordField: 'password'
 };
 
-const PORT = process.env.PORT || 3000;
-const USERNAME = process.env.DB_USERNAME;
-const PASSWORD = process.env.DB_PASSWORD;
-const NAME = process.env.DB_NAME;
-const HOST = process.env.DB_HOST;
-const SECRET_KEY = process.env.SECRET_KEY;
+const PORT = process.env.PORT || '';
+const USERNAME = process.env.DB_USERNAME || '';
+const PASSWORD = process.env.DB_PASSWORD || '';
+const NAME = process.env.DB_NAME || '';
+const HOST = process.env.DB_HOST || '';
+const SECRET_KEY = process.env.SECRET_KEY || '';
 
 const app = express();
 const server = createServer(app);
@@ -40,7 +46,7 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(express.urlencoded());
 app.set("view engine", "ejs");
-app.set('views', path.join(path.dirname(fileURLToPath(import.meta.url)), '/views'));
+app.set('views', path.join(__dirname, '/views'));
 app.use(session({secret: SECRET_KEY, resave: false, saveUninitialized: true}));
 
 async function start() {
@@ -51,16 +57,16 @@ async function start() {
             dbName: NAME,
         });
 
-        const verify = async (username, password, done) => {
+        const verify: VerifyFunction = (username: string, password: string, done: (error: Error | null, user?: Express.User | false) => void) => {
             try {
-                const user = await User.findOne({username: username});
-        
-                if (!user) return done(null, false);
-                if (!user.verifyPassword(password)) return done(null, false);
-                return done(null, user);
+                User.findOne({username: username}).then((user) => {
+                    if (!user) return done(null, false);
+                    if (!user.verifyPassword(password)) return done(null, false);
+                    return done(null, user);
+                });
             }
-            catch (e) {
-                return done(e);
+            catch (e: any) {
+                return done(new Error(e.message));
             }
         }
         

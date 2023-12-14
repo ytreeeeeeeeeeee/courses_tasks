@@ -1,4 +1,5 @@
-import { Schema, model } from "mongoose";
+import { Document, Schema, model } from "mongoose";
+import { IUser } from "../interfaces/user";
 
 const userSchema = new Schema({
     username: {
@@ -24,14 +25,13 @@ const userSchema = new Schema({
 
 userSchema.pre('save', function(next) {
     this.displayName = this.displayName || this.username;
-    this.emails.value = `${this.emails.value || this.username}@gmail.com`;
     next();
 });
 
-userSchema.methods.verifyPassword = function(password) {
+userSchema.methods.verifyPassword = function(password: string): boolean {
     return password === this.password;
 }
 
-const userModel = model('User', userSchema);
+const userModel = model<IUser & Document>('User', userSchema);
 
 export default userModel;

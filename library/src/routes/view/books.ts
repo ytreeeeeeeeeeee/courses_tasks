@@ -1,22 +1,34 @@
 import express from "express";
 
-import fileMulter from "../../middlewares/temporaryFile.js";
-import isAuth from "../../middlewares/isAuth.js";
+import fileMulter from "../../middlewares/temporaryFile";
+import isAuth from "../../middlewares/isAuth";
 
-import Book from "../../models/book.js";
-import Message from '../../models/message.js';
+import Message from '../../models/message';
+import { IBook } from "../../interfaces/book";
+import container from "../../infrastructure/container";
+import BooksRepository from "../../modules-ts/booksRepository";
+import { IUser } from "../../interfaces/user";
 
 const bookViewRouter = express.Router();
 
-function convertToFormData(body, file) {
+interface IBodyData {
+    title: IBook['title'];
+    description: IBook['description'];
+    authors: IBook['authors'];
+    favourite?: string;
+    fileCover: IBook['fileCover'];
+    fileName: IBook['fileName'];
+}
+
+function convertToFormData(body: IBodyData, file: Express.Multer.File | undefined) {
     const formData = new FormData();
 
     formData.append('title', body.title); 
     formData.append('description', body.description);
     formData.append('authors', body.authors);
-    formData.append('favourite', body.favourite ? true : false);
     formData.append('fileCover', body.fileCover);
     formData.append('fileName', body.fileName);
+    body.favourite && formData.append('favourite', body.favourite);
 
     if (file) {
         const fileInput = file;
@@ -29,7 +41,8 @@ function convertToFormData(body, file) {
 
 bookViewRouter.get('/', isAuth, async (req, res) => {
     try {
-        const books = await Book.find().select('-__v');
+        const repo = container.get(BooksRepository);
+        const books = await repo.getBooks();
 
         res.render('books/index', {
             title: 'Список книг',
@@ -50,7 +63,8 @@ bookViewRouter.get('/create', isAuth, (req, res) => {
 bookViewRouter.get('/update/:id', isAuth, async (req, res) => {
     const {id} = req.params;
     try {
-        const book = await Book.findById(id).select('-__v');
+        const repo = container.get(BooksRepository);
+        const book = await repo.getBook(id);
         if (!book) {
             res.redirect('/errors/404');
         }
@@ -70,12 +84,13 @@ bookViewRouter.get('/:id', isAuth, async (req, res) => {
     const {id} = req.params;
     
     try {
-        const book = await Book.findById(id).select('-__v');
+        const repo = container.get(BooksRepository);
+        const book = await repo.getBook(id);
         if (!book) {
             res.redirect('/errors/404');
         }
         else {
-            const msgs = await Message.find({bookId: book.id}).select('-__v').sort({_id: -1});
+            const msgs = await Message.find({bookId: book._id}).select('-__v').sort({_id: -1});
             fetch(`${req.protocol}://${process.env.COUNTER_URL}/counter/${id}/incr`, {
                 method: 'POST',
             }).then((response) => {
@@ -85,7 +100,7 @@ bookViewRouter.get('/:id', isAuth, async (req, res) => {
                         book: book,
                         count: r.count,
                         msgs: msgs,
-                        username: req.user.username,
+                        username: req.user?.username,
                     });
                 });
             });

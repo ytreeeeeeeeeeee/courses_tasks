@@ -1,7 +1,8 @@
 import express from 'express';
 import passport from 'passport';
-import isAuth from '../../middlewares/isAuth.js';
-import User from '../../models/user.js';
+import isAuth from '../../middlewares/isAuth';
+import container from '../../infrastructure/container';
+import UserModule from '../../modules-ts/userModule';
 
 const userRouter = express.Router();
 
@@ -16,18 +17,9 @@ userRouter.post('/login',
 });
 
 userRouter.post('/signup', async (req, res) => {
-    const {username, password, displayName, email} = req.body;
+    const userModule = container.get(UserModule);
 
-    const newUser = new User({   
-        username,
-        password,
-        displayName,
-        emails: {
-            value: email
-        },
-    });
-
-    await newUser.save();
+    const newUser = await userModule.createUser(req.body);
 
     res.json(newUser);
 });
